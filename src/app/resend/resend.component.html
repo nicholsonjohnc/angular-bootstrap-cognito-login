@@ -1,0 +1,14 @@
+<div class="card">
+  <div class="card-body">
+    <form>
+      <h1 class="card-title">Resend code</h1>
+      <div *ngIf="errorMessage!=null" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="email" [ngModelOptions]="{standalone: true}" type="email" class="form-control" aria-label="Email" placeholder="Email">
+      </div>
+      <button (click)="onResend()" type="submit" class="btn btn-primary btn-block">Resend code</button>
+    </form>
+  </div>
+</div>

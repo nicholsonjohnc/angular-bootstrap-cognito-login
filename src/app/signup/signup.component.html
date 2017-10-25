@@ -1,0 +1,22 @@
+<div class="card">
+  <div class="card-body">
+    <form>
+      <h1 class="card-title">Sign up</h1>
+      <div *ngIf="errorMessage!=null" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="email" [ngModelOptions]="{standalone: true}" type="email" class="form-control" aria-label="Email" placeholder="Email">
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="password" [ngModelOptions]="{standalone: true}" type="password" class="form-control" aria-label="Password (at least 8 characters)" placeholder="Password (at least 8 characters)">
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="confirmPassword" [ngModelOptions]="{standalone: true}" type="password" class="form-control" aria-label="Confirm password" placeholder="Confirm password">
+      </div>
+      <button (click)="onSignup()" type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+    <hr>
+    <p class="card-text text-muted">Already have an account? <a [routerLink]="[appPaths.signin]">Sign in</a>.</p>
+  </div>
+</div>

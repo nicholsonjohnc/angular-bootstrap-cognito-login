@@ -1,0 +1,22 @@
+<div class="card">
+  <div class="card-body">
+    <form>
+      <h1 class="card-title">Sign in</h1>
+      <div *ngIf="errorMessage!=null" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="email" [ngModelOptions]="{standalone: true}" type="email" class="form-control" aria-label="Email" placeholder="Email">
+      </div>
+      <div class="form-group">
+        <input [(ngModel)]="password" [ngModelOptions]="{standalone: true}" type="password" class="form-control" aria-label="Password" placeholder="Password">
+      </div>
+      <div class="form-group text-right">
+        <a [routerLink]="[appPaths.forgotPassword]">Forgot password?</a>
+      </div>
+      <button (click)="onSignin()" type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <hr>
+    <p class="card-text text-muted">Don't have an account? <a [routerLink]="[appPaths.signup]">Sign up</a>.</p>
+  </div>
+</div>
