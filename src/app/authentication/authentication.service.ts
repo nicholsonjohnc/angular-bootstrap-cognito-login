@@ -5,13 +5,17 @@ import * as STS from "aws-sdk/clients/sts";
 import * as CognitoIdentity from "aws-sdk/clients/cognitoidentity";
 import { v4 as uuid } from "uuid";
 
+export interface AwsConf {
+  region: string;
+}
+
 export interface CognitoConf {
   userPoolId: string;
   clientId: string;
   identityPoolId: string;
-  region: string;
 }
 
+let awsConf: AwsConf = require("../../../aws.conf.json");
 let cognitoConf: CognitoConf = require("../../../cognito.conf.json");
 
 type CognitoIdentityCredentials = AWS.CognitoIdentityCredentials;
@@ -23,15 +27,15 @@ export class AuthenticationService {
   userPoolId: string = cognitoConf.userPoolId;
   clientId: string = cognitoConf.clientId;
   identityPoolId: string = cognitoConf.identityPoolId;
-  region: string = cognitoConf.region;
 
   poolData: ICognitoUserPoolData = {
     UserPoolId: this.userPoolId,
     ClientId: this.clientId
   };
-  cognitoCredentials: CognitoIdentityCredentials;
 
   constructor() {
+
+    AWS.config.region = awsConf.region;
 
   }
 
@@ -49,17 +53,11 @@ export class AuthenticationService {
 
   }
 
-  // Set the cognito identity credentials object.
-  setCognitoCredentials(credentials: CognitoIdentityCredentials): void {
-
-    this.cognitoCredentials = credentials;
-
-  }
-
   // Get identityId.
   getCognitoIdentity(): string {
-
-      return this.cognitoCredentials.identityId;
+    
+    let cognitoCredentials: CognitoIdentityCredentials = <CognitoIdentityCredentials> AWS.config.credentials;
+    return cognitoCredentials.identityId;
 
   }
 
@@ -163,26 +161,44 @@ export class AuthenticationService {
       callback(error);
     }
     else {
-      // Build credentials object.
-      let credentials: CognitoIdentityCredentials = this.buildCognitoCredentials(session.getIdToken().getJwtToken());
-
-      // Set credentials object.
-      this.setCognitoCredentials(credentials);
-      AWS.config.credentials = credentials;
-
-      // Prime AWS SDK by making innocuous API call so that identityId gets injected into credentials object.
-      let sts: STS = new STS();
-      sts.getCallerIdentity(function (error: any, result: any) {
-        callback(null);
-      });
+      this.initializeCognitoCredentials(session.getIdToken().getJwtToken(), callback);
     }
+
+  }
+
+  // Build and set credentials.  Prime AWS SDK.
+  initializeCognitoCredentials(jwtToken: string, callback: any) {
+
+    // Build credentials object.
+    let credentials: CognitoIdentityCredentials = this.buildCognitoCredentials(jwtToken);
+
+    // Set credentials object.
+    AWS.config.credentials = credentials;
+
+    (<CognitoIdentityCredentials> AWS.config.credentials).get(function(error) {
+      if (error) {
+        console.log(error);
+      }
+    });
+
+    // Prime AWS SDK by making innocuous API call so that identityId gets injected into credentials object.
+    let sts: STS = new STS();
+    sts.getCallerIdentity(function (error: any, result: any) {
+      callback(null);
+
+      if(error){
+        console.log('Error priming AWS sdk.', error);
+      } else {
+        console.log('AWS sdk primed.');
+      }
+    });
 
   }
 
   // Build cognito identity credentials object.
   buildCognitoCredentials(jwtToken: string): CognitoIdentityCredentials {
 
-    let url: string = "cognito-idp." + this.region.toLowerCase() + ".amazonaws.com/" + this.userPoolId;
+    let url: string = "cognito-idp." + AWS.config.region.toLowerCase() + ".amazonaws.com/" + this.userPoolId;
     let logins: LoginsMap = {};
     logins[url] = jwtToken;
     let params: any = {
@@ -193,6 +209,9 @@ export class AuthenticationService {
     return credentials;
 
   }
+
+
+
 
   // Signout user.
   signout() {
@@ -330,6 +349,8 @@ export class AuthenticationService {
       });
 
   }
+
+
 
 
 }
