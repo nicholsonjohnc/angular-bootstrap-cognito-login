@@ -24,18 +24,22 @@ type LoginsMap = CognitoIdentity.LoginsMap;
 @Injectable()
 export class AuthenticationService {
 
-  userPoolId: string = cognitoConf.userPoolId;
-  clientId: string = cognitoConf.clientId;
-  identityPoolId: string = cognitoConf.identityPoolId;
-
-  poolData: ICognitoUserPoolData = {
-    UserPoolId: this.userPoolId,
-    ClientId: this.clientId
-  };
+  userPoolId: string;
+  clientId: string;
+  identityPoolId: string;
+  poolData: ICognitoUserPoolData;
+  cognitoCredentials: CognitoIdentityCredentials;
 
   constructor() {
 
     AWS.config.region = awsConf.region;
+    this.userPoolId = cognitoConf.userPoolId;
+    this.clientId = cognitoConf.clientId;
+    this.poolData = {
+      UserPoolId: this.userPoolId,
+      ClientId: this.clientId
+    };
+    this.identityPoolId = cognitoConf.identityPoolId;
 
   }
 
@@ -56,8 +60,7 @@ export class AuthenticationService {
   // Get identityId.
   getCognitoIdentity(): string {
     
-    let cognitoCredentials: CognitoIdentityCredentials = <CognitoIdentityCredentials> AWS.config.credentials;
-    return cognitoCredentials.identityId;
+    return this.cognitoCredentials.identityId;
 
   }
 
@@ -173,8 +176,10 @@ export class AuthenticationService {
     let credentials: CognitoIdentityCredentials = this.buildCognitoCredentials(jwtToken);
 
     // Set credentials object.
+    this.cognitoCredentials = credentials;
     AWS.config.credentials = credentials;
 
+    // Log any errors getting credentials.
     (<CognitoIdentityCredentials> AWS.config.credentials).get(function(error) {
       if (error) {
         console.log(error);
@@ -185,7 +190,6 @@ export class AuthenticationService {
     let sts: STS = new STS();
     sts.getCallerIdentity(function (error: any, result: any) {
       callback(null);
-
       if(error){
         console.log('Error priming AWS sdk.', error);
       } else {
@@ -210,13 +214,12 @@ export class AuthenticationService {
 
   }
 
-
-
-
-  // Signout user.
+  // Signout user and clear cached id.
   signout() {
 
     this.getCurrentUser().signOut();
+    this.cognitoCredentials.clearCachedId();
+    AWS.config.credentials = this.cognitoCredentials;
 
   }
 
@@ -349,8 +352,5 @@ export class AuthenticationService {
       });
 
   }
-
-
-
 
 }
